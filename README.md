@@ -8,10 +8,9 @@ The AAC web app talks to this service over HTTP (default port `5555`) to synthes
 
 ### Pull prebuilt image (recommended)
 
-GitHub Actions publishes `ghcr.io/asterics/asterics-speech:latest` when `deploy/asterics-speech/` changes on `master`/`main`.
+GitHub Actions publishes `ghcr.io/jubblin/asterics-speech:latest` when speech service files change on `main`/`master`.
 
 ```bash
-cd deploy/asterics-speech
 docker compose pull
 docker compose up -d
 ```
@@ -19,7 +18,6 @@ docker compose up -d
 ### Build locally
 
 ```bash
-cd deploy/asterics-speech
 docker compose up --build -d
 ```
 
@@ -136,11 +134,11 @@ Set `SPEECH_LOG_LEVEL=DEBUG` in `docker-compose.yml` for more detail.
 
 ## CI publish
 
-Workflow: [`.github/workflows/publish-asterics-speech.yml`](../../.github/workflows/publish-asterics-speech.yml)
+Workflow: [`.github/workflows/publish-asterics-speech.yml`](.github/workflows/publish-asterics-speech.yml)
 
-- **Trigger:** push to `master` or `main` that touches `deploy/asterics-speech/**`, or manual **workflow_dispatch**
+- **Trigger:** push to `master` or `main` that touches `Dockerfile`, `docker-compose.yml`, `*.py`, or the workflow file; pull requests build only (no push); manual **workflow_dispatch**
 - **Registry:** [GitHub Container Registry](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry)
-- **Image:** `ghcr.io/asterics/asterics-speech` with tags `latest` (default branch), branch name, and commit SHA
+- **Image:** `ghcr.io/jubblin/asterics-speech` with tags `latest` (default branch), branch name, and commit SHA
 
 After the first publish, set the package visibility to **Public** under the repo’s **Packages** tab if you want anonymous `docker pull` (org default is often private).
 
@@ -157,7 +155,7 @@ The Dockerfile follows container linting best practices:
 The Dockerfile downloads the Piper model at build time. Pass build args via `docker compose build` or explicitly:
 
 ```bash
-docker build -f deploy/asterics-speech/Dockerfile deploy/asterics-speech \
+docker build -f Dockerfile . \
   --build-arg PIPER_MODEL_BASENAME=en_GB-alan-medium \
   --build-arg PIPER_MODEL_ONNX_URL=https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_GB/alan/medium/en_GB-alan-medium.onnx \
   --build-arg PIPER_MODEL_JSON_URL=https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_GB/alan/medium/en_GB-alan-medium.onnx.json
@@ -171,17 +169,11 @@ From the repo root (see also `CLAUDE.md` **Health Stack**):
 
 ```bash
 # Docker image lint
-hadolint deploy/asterics-speech/Dockerfile
-checkov -f deploy/asterics-speech/Dockerfile
+hadolint Dockerfile
+checkov -f Dockerfile
 
-# Python syntax (speech helper)
-python3 -m py_compile deploy/asterics-speech/*.py
-
-# Main app tests (requires npm install first)
-npm install && npm test
-
-# Shell scripts
-shellcheck scripts/*.sh
+# Python syntax
+python3 -m py_compile *.py
 ```
 
 Known checkov finding: `CKV_DOCKER_3` (container runs as root). Acceptable for local/LAN use; add a non-root `USER` before production hardening.

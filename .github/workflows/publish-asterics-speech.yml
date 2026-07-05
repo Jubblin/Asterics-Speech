@@ -9,13 +9,17 @@ on:
       - main
       - piper-speech-helper/**
     paths:
-      - deploy/asterics-speech/**
+      - Dockerfile
+      - docker-compose.yml
+      - "**/*.py"
       - .github/workflows/publish-asterics-speech.yml
   workflow_dispatch:
 
 permissions:
   contents: read
   packages: write
+  id-token: write
+  attestations: write
 
 concurrency:
   group: publish-asterics-speech-${{ github.ref }}
@@ -23,7 +27,7 @@ concurrency:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/asterics-speech
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   build-and-push:
@@ -57,7 +61,7 @@ jobs:
         with:
           context: .
           file: Dockerfile
-          push: true
+          push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |

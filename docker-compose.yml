@@ -3,7 +3,7 @@
 # Female alternative: en_GB-southern_english_female-medium under en/en_GB/southern_english_female/medium/
 services:
   speech:
-    image: ghcr.io/asterics/asterics-speech:latest
+    image: ghcr.io/jubblin/asterics-speech:latest
     build:
       context: .
       dockerfile: Dockerfile
