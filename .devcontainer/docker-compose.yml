@@ -1,0 +1,33 @@
+services:
+  dev:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        PIPER_MODEL_BASENAME: en_GB-alan-medium
+        PIPER_MODEL_ONNX_URL: https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_GB/alan/medium/en_GB-alan-medium.onnx
+        PIPER_MODEL_JSON_URL: https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_GB/alan/medium/en_GB-alan-medium.onnx.json
+    volumes:
+      - ..:/workspace:cached
+      - ../config.py:/app/speech/config.py
+      - ../provider_piper_data.py:/app/speech/provider_piper_data.py
+      - ../speech_logging.py:/app/speech/speech_logging.py
+      - ../start_server.py:/app/speech/start_server.py
+      - speech-temp:/app/speech/temp
+    environment:
+      SPEECH_HOST: 0.0.0.0
+      SPEECH_PORT: "5555"
+      SPEECH_LOG_LEVEL: INFO
+      CACHE_DATA: "true"
+      PIPER_PROVIDER_ID: piper_data
+      PIPER_MODEL: /models/en_GB-alan-medium.onnx
+      PIPER_VOICE_ID: en_GB-alan-medium
+      PIPER_VOICE_NAME: UK English (Alan)
+      PIPER_VOICE_LANG: en-GB
+    ports:
+      - "5555:5555"
+    command: sleep infinity
+    working_dir: /workspace
+
+volumes:
+  speech-temp:

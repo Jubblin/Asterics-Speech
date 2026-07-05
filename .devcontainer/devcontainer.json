@@ -1,0 +1,27 @@
+{
+  "name": "Asterics Speech",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "dev",
+  "workspaceFolder": "/workspace",
+  "forwardPorts": [5555],
+  "portsAttributes": {
+    "5555": {
+      "label": "Speech API",
+      "onAutoForward": "notify"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-azuretools.vscode-docker"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.analysis.extraPaths": ["/app/speech"]
+      }
+    }
+  },
+  "postCreateCommand": "python3 -m py_compile /workspace/*.py"
+}

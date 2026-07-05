@@ -1,0 +1,31 @@
+# UK English Piper speech helper for Asterics AAC.
+# Change voice: update build.args (model download) and matching PIPER_* env vars, then rebuild.
+# Female alternative: en_GB-southern_english_female-medium under en/en_GB/southern_english_female/medium/
+services:
+  speech:
+    image: ghcr.io/asterics/asterics-speech:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PIPER_MODEL_BASENAME: en_GB-alan-medium
+        PIPER_MODEL_ONNX_URL: https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_GB/alan/medium/en_GB-alan-medium.onnx
+        PIPER_MODEL_JSON_URL: https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_GB/alan/medium/en_GB-alan-medium.onnx.json
+    ports:
+      - "5555:5555"
+    environment:
+      SPEECH_HOST: 0.0.0.0
+      SPEECH_PORT: "5555"
+      SPEECH_LOG_LEVEL: "INFO"
+      CACHE_DATA: "true"
+      PIPER_PROVIDER_ID: piper_data
+      PIPER_MODEL: /models/en_GB-alan-medium.onnx
+      PIPER_VOICE_ID: en_GB-alan-medium
+      PIPER_VOICE_NAME: UK English (Alan)
+      PIPER_VOICE_LANG: en-GB
+    volumes:
+      - piper-cache:/app/speech/temp
+    restart: unless-stopped
+
+volumes:
+  piper-cache:
