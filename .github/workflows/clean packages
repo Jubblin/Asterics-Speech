@@ -1,6 +1,14 @@
 name: Daily Image Cleanup
+
 on:
   workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+  attestations: write
+
 jobs:
   cleanup:
     runs-on: ubuntu-latest
