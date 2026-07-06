@@ -1,9 +1,14 @@
 FROM python:3.12-bookworm
 
 ARG AAC_HELPER_COMMIT=8b04af51bd0d0b99895327000122062e3b9c0276
+ARG VERSION=dev
 ARG PIPER_MODEL_ONNX_URL
 ARG PIPER_MODEL_JSON_URL
 ARG PIPER_MODEL_BASENAME
+
+LABEL org.opencontainers.image.title="Asterics Speech" \
+    org.opencontainers.image.source="https://github.com/Jubblin/Asterics-Speech" \
+    org.opencontainers.image.version="${VERSION}"
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -34,7 +39,9 @@ RUN pip install --no-cache-dir \
     && curl -fsSL "${PIPER_MODEL_ONNX_URL}" -o "/models/${PIPER_MODEL_BASENAME}.onnx" \
     && curl -fsSL "${PIPER_MODEL_JSON_URL}" -o "/models/${PIPER_MODEL_BASENAME}.onnx.json"
 
-COPY config.py log_redaction.py provider_piper_data.py speech_logging.py start_server.py /app/speech/
+COPY VERSION version.py config.py log_redaction.py provider_piper_data.py speech_logging.py start_server.py /app/speech/
+
+ENV ASTERICS_SPEECH_VERSION=${VERSION}
 
 EXPOSE 5555
 

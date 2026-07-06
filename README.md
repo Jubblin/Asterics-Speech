@@ -31,6 +31,7 @@ Verify the service is healthy:
 
 ```bash
 curl http://localhost:5555/voices/
+curl http://localhost:5555/version/
 ```
 
 Point Asterics AAC at `http://<host>:5555` in speech settings.
@@ -50,12 +51,14 @@ At build time, the image clones `Asterics-AAC-Helper` and copies its `speech/` m
 
 | File | Role |
 |------|------|
+| `VERSION` | Semantic version (single source of truth for releases) |
+| `version.py` | Reads `VERSION` at runtime |
 | `Dockerfile` | Image build: system deps, helper code, Piper model, Python packages |
 | `docker-compose.yml` | Local deployment with UK English voice defaults |
 | `config.py` | Registers the Piper provider and enables response caching |
 | `provider_piper_data.py` | Piper TTS provider implementation |
 | `speech_logging.py` | Request, cache, and synthesis timing logs |
-| `start_server.py` | Entrypoint; configures logging and binds host/port from env |
+| `start_server.py` | Entrypoint; logging, `/version/`, binds host/port from env |
 
 ## API
 
@@ -63,6 +66,7 @@ Provided by Asterics AAC Helper (not defined in this folder):
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
+| `/version/` | GET | Service version from `VERSION` (JSON `{"version":"…"}`) |
 | `/voices/` | GET | List available voices (also used for health checks) |
 | `/speakdata/<text>/` | GET/POST | Return synthesized audio (`application/octet-stream`) |
 | `/speakdata/<text>/<providerId>/<voiceId>/` | GET/POST | Synthesize with explicit provider/voice |
@@ -94,6 +98,7 @@ Text in URLs is lowercased by the helper. With caching enabled, repeated phrases
 | Argument | Description |
 |----------|-------------|
 | `AAC_HELPER_COMMIT` | Git commit of [Asterics-AAC-Helper](https://github.com/asterics/Asterics-AAC-Helper) to vendor into the image |
+| `VERSION` | Semantic version baked into OCI labels (defaults to `dev` for local builds; CI passes `VERSION` file) |
 | `PIPER_MODEL_BASENAME` | Filename stem for the downloaded model |
 | `PIPER_MODEL_ONNX_URL` | URL of the `.onnx` voice file |
 | `PIPER_MODEL_JSON_URL` | URL of the matching `.onnx.json` config |
@@ -141,13 +146,44 @@ speak cache=HIT text=hash=a665a4592042 len=5 ... elapsed_ms=2.4
 
 Set `SPEECH_LOG_LEVEL=DEBUG` or `SPEECH_LOG_TEXT=true` in `docker-compose.yml` to log full spoken text.
 
+## Versioning
+
+The canonical version lives in [`VERSION`](VERSION) (currently `0.1.0`). CI reads this file and tags images accordingly.
+
+| Image tag | When published |
+|-----------|----------------|
+| `latest` | Default branch (`main`/`master`) |
+| `0.1.0` | Every publish (from `VERSION`) |
+| `0.1`, `0` | Git tag push matching `v0.1.0` (semver) |
+| `main`, `<sha>` | Branch and commit tags |
+
+### Release a new version
+
+1. Bump the version in `VERSION` (semver, no `v` prefix in the file).
+2. Commit and push to `main`.
+3. Tag and push (tag must match `VERSION` with a `v` prefix):
+
+```bash
+VERSION=$(tr -d ' \n\r\t' < VERSION)
+git tag "v${VERSION}"
+git push origin "v${VERSION}"
+```
+
+4. CI publishes `ghcr.io/jubblin/asterics-speech:${VERSION}`, semver aliases, and `latest`.
+
+Pin deployments in `docker-compose.yml`:
+
+```yaml
+image: ghcr.io/jubblin/asterics-speech:0.1.0
+```
+
 ## CI publish
 
 Workflow: [`.github/workflows/publish-asterics-speech.yml`](.github/workflows/publish-asterics-speech.yml)
 
-- **Trigger:** push to `master` or `main` that touches `Dockerfile`, `docker-compose.yml`, `*.py`, or the workflow file; pull requests build only (no push); manual **workflow_dispatch**
+- **Trigger:** push to `master` or `main`, git tag `v*`, or manual **workflow_dispatch**; pull requests build only (no push)
 - **Registry:** [GitHub Container Registry](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry)
-- **Image:** `ghcr.io/jubblin/asterics-speech` with tags `latest` (default branch), branch name, and commit SHA
+- **Image:** `ghcr.io/jubblin/asterics-speech` with tags `latest`, `VERSION`, semver aliases (on `v*` tags), branch name, and commit SHA
 
 After the first publish, set the package visibility to **Public** under the repo’s **Packages** tab if you want anonymous `docker pull` (org default is often private).
 
