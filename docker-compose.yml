@@ -3,6 +3,7 @@
 # Female alternative: en_GB-southern_english_female-medium under en/en_GB/southern_english_female/medium/
 services:
   speech:
+# Pin a release: image: ghcr.io/jubblin/asterics-speech:0.1.0  (see VERSION)
     image: ghcr.io/jubblin/asterics-speech:latest
     build:
       context: .

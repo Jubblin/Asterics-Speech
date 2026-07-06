@@ -8,9 +8,12 @@ on:
       - master
       - main
       - piper-speech-helper/**
+    tags:
+      - v*
     paths:
       - Dockerfile
       - docker-compose.yml
+      - VERSION
       - "**/*.py"
       - .github/workflows/publish-asterics-speech.yml
   workflow_dispatch:
@@ -36,6 +39,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
+      - name: Read VERSION file
+        id: ver
+        run: echo "version=$(tr -d ' \n\r\t' < VERSION)" >> "$GITHUB_OUTPUT"
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
@@ -52,6 +59,10 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
+            type=raw,value=${{ steps.ver.outputs.version }},enable=${{ github.event_name != 'pull_request' }}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha,prefix=
             type=ref,event=branch
@@ -65,6 +76,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
+            VERSION=${{ steps.ver.outputs.version }}
             PIPER_MODEL_BASENAME=en_GB-alan-medium
             PIPER_MODEL_ONNX_URL=https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_GB/alan/medium/en_GB-alan-medium.onnx
             PIPER_MODEL_JSON_URL=https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_GB/alan/medium/en_GB-alan-medium.onnx.json

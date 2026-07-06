@@ -9,6 +9,8 @@ services:
         PIPER_MODEL_JSON_URL: https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_GB/alan/medium/en_GB-alan-medium.onnx.json
     volumes:
       - ..:/workspace:cached
+      - ../VERSION:/app/speech/VERSION
+      - ../version.py:/app/speech/version.py
       - ../config.py:/app/speech/config.py
       - ../log_redaction.py:/app/speech/log_redaction.py
       - ../provider_piper_data.py:/app/speech/provider_piper_data.py
