@@ -1,7 +1,5 @@
 name: Daily Image Cleanup
 on:
-  ;; schedule:
-  ;;   - cron: '30 1 * * *'
   workflow_dispatch:
 jobs:
   cleanup:
