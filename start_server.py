@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 import os
 
+from flask import jsonify
+
 import speech_logging
 import version
-from flask import jsonify
 from start import app
 
 speech_logging.configure_logging(os.environ.get("SPEECH_LOG_LEVEL", "INFO"))

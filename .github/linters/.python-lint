@@ -1,0 +1,9 @@
+[MESSAGES CONTROL]
+disable=import-error,
+        invalid-name,
+        missing-module-docstring,
+        missing-function-docstring,
+        too-few-public-methods
+
+[FORMAT]
+max-line-length=120

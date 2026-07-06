@@ -181,7 +181,14 @@ image: ghcr.io/jubblin/asterics-speech:0.1.0
 
 Workflow: [`.github/workflows/publish-asterics-speech.yml`](.github/workflows/publish-asterics-speech.yml)
 
-- **Trigger:** push to `master` or `main`, git tag `v*`, or manual **workflow_dispatch**; pull requests build only (no push)
+Pipeline order:
+
+1. **Super-Linter** — Python, Dockerfile (Hadolint + Checkov), YAML, Markdown, and GitHub Actions checks
+2. **Docker build** — image loaded locally (not pushed yet)
+3. **Trivy** — fails on unfixed `CRITICAL`/`HIGH` OS and library vulnerabilities
+4. **Push to GHCR** — only when lint, build, and scan pass (skipped on pull requests)
+
+- **Trigger:** push to `master` or `main`, git tag `v*`, or manual **workflow_dispatch**; pull requests lint, build, and scan only (no push)
 - **Registry:** [GitHub Container Registry](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry)
 - **Image:** `ghcr.io/jubblin/asterics-speech` with tags `latest`, `VERSION`, semver aliases (on `v*` tags), branch name, and commit SHA
 
@@ -221,7 +228,7 @@ checkov -f Dockerfile
 python3 -m py_compile *.py
 ```
 
-Known checkov finding: `CKV_DOCKER_3` (container runs as root). Acceptable for local/LAN use; add a non-root `USER` before production hardening.
+Known Checkov finding skipped in [`.github/linters/.checkov.yaml`](.github/linters/.checkov.yaml): `CKV_DOCKER_3` (container runs as root). Acceptable for local/LAN use; add a non-root `USER` before production hardening.
 
 Run `/health` (gstack) for a scored dashboard and trend tracking.
 
