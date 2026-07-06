@@ -20,9 +20,11 @@ RUN apt-get update \
 
 WORKDIR /app
 
-RUN mkdir -p /app/speech/ \
-    && git init /tmp/helper \
-    && cd /tmp/helper \
+RUN mkdir -p /app/speech/ /tmp/helper
+
+WORKDIR /tmp/helper
+
+RUN git init . \
     && git remote add origin https://github.com/asterics/Asterics-AAC-Helper.git \
     && git fetch --depth 1 origin "${AAC_HELPER_COMMIT}" \
     && git checkout FETCH_HEAD \
