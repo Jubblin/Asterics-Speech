@@ -2,10 +2,10 @@
 import os
 
 from flask import jsonify
+from start import app  # type: ignore[import-not-found]
 
 import speech_logging
 import version
-from start import app
 
 speech_logging.configure_logging(os.environ.get("SPEECH_LOG_LEVEL", "INFO"))
 speech_logging.patch_speech_manager()

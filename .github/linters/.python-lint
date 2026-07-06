@@ -3,7 +3,8 @@ disable=import-error,
         invalid-name,
         missing-module-docstring,
         missing-function-docstring,
-        too-few-public-methods
+        too-few-public-methods,
+        wrong-import-order
 
 [FORMAT]
 max-line-length=120
