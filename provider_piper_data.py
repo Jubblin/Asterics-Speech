@@ -4,11 +4,13 @@ import subprocess
 import time
 
 import constants  # type: ignore[import-not-found]
+import log_redaction
 import util  # type: ignore[import-not-found]
 
 logger = logging.getLogger("asterics.speech.piper")
 
 providerId = os.environ["PIPER_PROVIDER_ID"]
+_synth_timeout_s = float(os.environ.get("PIPER_SYNTH_TIMEOUT_SECONDS", "60"))
 
 
 def get_provider_id():
@@ -41,25 +43,37 @@ getVoices = get_voices
 def get_speak_data(text, _voice_id=None):
     start = time.perf_counter()
     path = util.getTempFileFullPath(providerId)
-    result = subprocess.run(
-        ["piper", "--model", os.environ["PIPER_MODEL"], "--output_file", path],
-        input=text,
-        text=True,
-        capture_output=True,
-    )
+    text_label = log_redaction.format_speech_text(text, logger)
+    try:
+        result = subprocess.run(
+            ["piper", "--model", os.environ["PIPER_MODEL"], "--output_file", path],
+            input=text,
+            text=True,
+            capture_output=True,
+            timeout=_synth_timeout_s,
+        )
+    except subprocess.TimeoutExpired:
+        elapsed_ms = (time.perf_counter() - start) * 1000
+        logger.error(
+            "piper timed out text=%s timeout_s=%.1f elapsed_ms=%.1f",
+            text_label,
+            _synth_timeout_s,
+            elapsed_ms,
+        )
+        return b""
     elapsed_ms = (time.perf_counter() - start) * 1000
     if result.returncode != 0:
         logger.error(
-            "piper failed text=%r elapsed_ms=%.1f stderr=%s",
-            text,
+            "piper failed text=%s elapsed_ms=%.1f stderr=%s",
+            text_label,
             elapsed_ms,
             result.stderr.strip(),
         )
         return b""
     data = util.getTempFileData(providerId)
     logger.info(
-        "piper synthesized text=%r bytes=%d elapsed_ms=%.1f",
-        text,
+        "piper synthesized text=%s bytes=%d elapsed_ms=%.1f",
+        text_label,
         len(data),
         elapsed_ms,
     )

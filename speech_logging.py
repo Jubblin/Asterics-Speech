@@ -4,6 +4,7 @@ import time
 from urllib.parse import unquote
 
 import config  # type: ignore[import-not-found]
+import log_redaction
 import speechManager  # type: ignore[import-not-found]
 import util  # type: ignore[import-not-found]
 from flask import g, request
@@ -21,6 +22,7 @@ def configure_logging(level: str) -> None:
         level=getattr(logging, level.upper(), logging.INFO),
         format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
     )
+    log_redaction.configure_log_redaction()
 
 
 def _parse_speech_path(path: str) -> dict | None:
@@ -38,14 +40,15 @@ def _parse_speech_path(path: str) -> dict | None:
 def patch_speech_manager() -> None:
     def get_speak_data_logged(text, provider_id="", voice_id=None):
         start = time.perf_counter()
+        text_label = log_redaction.format_speech_text(text, logger)
 
         if config.cacheData:
             cached = util.getCacheData(text, provider_id, voice_id)
             if cached:
                 elapsed_ms = (time.perf_counter() - start) * 1000
                 logger.info(
-                    "speak cache=HIT text=%r provider=%r voice=%r bytes=%d elapsed_ms=%.1f",
-                    text,
+                    "speak cache=HIT text=%s provider=%r voice=%r bytes=%d elapsed_ms=%.1f",
+                    text_label,
                     provider_id or "(default)",
                     voice_id or "(default)",
                     len(cached),
@@ -60,9 +63,9 @@ def patch_speech_manager() -> None:
         )
         if not hasattr(provider, "getSpeakData"):
             logger.error(
-                "speak synthesis=FAILED missing getSpeakData provider=%r text=%r",
+                "speak synthesis=FAILED missing getSpeakData provider=%r text=%s",
                 provider_id or "(default)",
-                text,
+                text_label,
             )
             return None
 
@@ -76,9 +79,9 @@ def patch_speech_manager() -> None:
 
         if not data:
             logger.warning(
-                "speak cache=%s synthesis=FAILED text=%r provider=%r voice=%r synth_ms=%.1f total_ms=%.1f",
+                "speak cache=%s synthesis=FAILED text=%s provider=%r voice=%r synth_ms=%.1f total_ms=%.1f",
                 "MISS" if config.cacheData else "disabled",
-                text,
+                text_label,
                 provider_id or "(default)",
                 voice_id or "(default)",
                 synth_ms,
@@ -87,9 +90,9 @@ def patch_speech_manager() -> None:
             return data
 
         logger.info(
-            "speak cache=%s synthesis=OK text=%r provider=%r voice=%r bytes=%d synth_ms=%.1f total_ms=%.1f",
+            "speak cache=%s synthesis=OK text=%s provider=%r voice=%r bytes=%d synth_ms=%.1f total_ms=%.1f",
             "MISS" if config.cacheData else "disabled",
-            text,
+            text_label,
             provider_id or "(default)",
             voice_id or "(default)",
             len(data),
@@ -113,11 +116,11 @@ def install_request_logging(app) -> None:
 
         if speech:
             logger.info(
-                "request %s %s endpoint=%s text=%r provider=%r voice=%r status=%s elapsed_ms=%.1f",
+                "request %s %s endpoint=%s text=%s provider=%r voice=%r status=%s elapsed_ms=%.1f",
                 request.method,
                 request.path,
                 speech["endpoint"],
-                speech["text"],
+                log_redaction.format_speech_text(speech["text"], logger),
                 speech["provider_id"] or "(default)",
                 speech["voice_id"] or "(default)",
                 response.status_code,

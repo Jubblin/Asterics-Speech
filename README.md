@@ -6,19 +6,25 @@ The AAC web app talks to this service over HTTP (default port `5555`) to synthes
 
 ## Quick start
 
-### Pull prebuilt image (recommended)
+### Build locally (recommended)
 
-GitHub Actions publishes `ghcr.io/jubblin/asterics-speech:latest` when speech service files change on `main`/`master`.
+```bash
+docker compose up --build -d
+```
+
+### Pull prebuilt image
+
+GitHub Actions publishes `ghcr.io/jubblin/asterics-speech:latest` when speech service files change on `main`/`master`. The image must exist in GHCR before `docker compose pull` works.
+
+If pull fails with `manifest unknown` or `denied`, build locally (above) or fix GHCR access:
+
+1. Open [your packages](https://github.com/Jubblin?tab=packages) → `asterics-speech` → **Package settings**
+2. Under **Manage Actions access**, grant `Jubblin/Asterics-Speech` **Write** (or delete an orphaned package and re-run the publish workflow)
+3. Set package visibility to **Public** if you want anonymous `docker pull`
 
 ```bash
 docker compose pull
 docker compose up -d
-```
-
-### Build locally
-
-```bash
-docker compose up --build -d
 ```
 
 Verify the service is healthy:
@@ -74,7 +80,9 @@ Text in URLs is lowercased by the helper. With caching enabled, repeated phrases
 | `SPEECH_HOST` | `0.0.0.0` | Bind address |
 | `SPEECH_PORT` | `5555` | Listen port |
 | `SPEECH_LOG_LEVEL` | `INFO` | Log verbosity (`DEBUG`, `INFO`, `WARNING`, `ERROR`) |
+| `SPEECH_LOG_TEXT` | `false` | Log full spoken phrases at `INFO`; default logs `hash=` + `len=` only |
 | `CACHE_DATA` | `true` | Cache synthesized audio on disk |
+| `PIPER_SYNTH_TIMEOUT_SECONDS` | `60` | Max seconds to wait for Piper synthesis per request |
 | `PIPER_PROVIDER_ID` | `piper_data` | Provider ID exposed to the AAC app |
 | `PIPER_MODEL` | `/models/en_GB-alan-medium.onnx` | Path to ONNX model inside the container |
 | `PIPER_VOICE_ID` | `en_GB-alan-medium` | Voice identifier |
@@ -85,6 +93,7 @@ Text in URLs is lowercased by the helper. With caching enabled, repeated phrases
 
 | Argument | Description |
 |----------|-------------|
+| `AAC_HELPER_COMMIT` | Git commit of [Asterics-AAC-Helper](https://github.com/asterics/Asterics-AAC-Helper) to vendor into the image |
 | `PIPER_MODEL_BASENAME` | Filename stem for the downloaded model |
 | `PIPER_MODEL_ONNX_URL` | URL of the `.onnx` voice file |
 | `PIPER_MODEL_JSON_URL` | URL of the matching `.onnx.json` config |
@@ -115,22 +124,22 @@ Structured logs go to stdout (view with `docker compose logs -f speech`).
 
 | Layer | What is logged |
 |-------|------------------|
-| HTTP requests | Method, path, endpoint, spoken text, provider/voice, status, `elapsed_ms` |
+| HTTP requests | Method, path, endpoint, text hash/length (or full text at `DEBUG` / `SPEECH_LOG_TEXT=true`), provider/voice, status, `elapsed_ms` |
 | Cache | `cache=HIT` with `elapsed_ms`, or `cache=MISS` with `synth_ms` and `total_ms` |
 | Piper | Synthesis duration and output size per phrase |
 
-Example:
+Example (default redaction at `INFO`):
 
 ```
-request GET /speakdata/hello/ endpoint=speakdata text='hello' ... elapsed_ms=820.1
-speak cache=MISS synthesis=OK text='hello' ... synth_ms=815.2 total_ms=821.4
-piper synthesized text='hello' bytes=12345 elapsed_ms=815.2
+request GET /speakdata/hello/ endpoint=speakdata text=hash=a665a4592042 len=5 ... elapsed_ms=820.1
+speak cache=MISS synthesis=OK text=hash=a665a4592042 len=5 ... synth_ms=815.2 total_ms=821.4
+piper synthesized text=hash=a665a4592042 len=5 bytes=12345 elapsed_ms=815.2
 
 request GET /speakdata/hello/ ... elapsed_ms=3.1
-speak cache=HIT text='hello' ... elapsed_ms=2.4
+speak cache=HIT text=hash=a665a4592042 len=5 ... elapsed_ms=2.4
 ```
 
-Set `SPEECH_LOG_LEVEL=DEBUG` in `docker-compose.yml` for more detail.
+Set `SPEECH_LOG_LEVEL=DEBUG` or `SPEECH_LOG_TEXT=true` in `docker-compose.yml` to log full spoken text.
 
 ## CI publish
 

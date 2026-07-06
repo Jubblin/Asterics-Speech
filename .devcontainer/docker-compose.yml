@@ -10,6 +10,7 @@ services:
     volumes:
       - ..:/workspace:cached
       - ../config.py:/app/speech/config.py
+      - ../log_redaction.py:/app/speech/log_redaction.py
       - ../provider_piper_data.py:/app/speech/provider_piper_data.py
       - ../speech_logging.py:/app/speech/speech_logging.py
       - ../start_server.py:/app/speech/start_server.py
@@ -18,7 +19,9 @@ services:
       SPEECH_HOST: 0.0.0.0
       SPEECH_PORT: "5555"
       SPEECH_LOG_LEVEL: INFO
+      SPEECH_LOG_TEXT: "false"
       CACHE_DATA: "true"
+      PIPER_SYNTH_TIMEOUT_SECONDS: "60"
       PIPER_PROVIDER_ID: piper_data
       PIPER_MODEL: /models/en_GB-alan-medium.onnx
       PIPER_VOICE_ID: en_GB-alan-medium

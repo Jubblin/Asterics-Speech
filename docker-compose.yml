@@ -17,7 +17,9 @@ services:
       SPEECH_HOST: 0.0.0.0
       SPEECH_PORT: "5555"
       SPEECH_LOG_LEVEL: "INFO"
+      SPEECH_LOG_TEXT: "false"
       CACHE_DATA: "true"
+      PIPER_SYNTH_TIMEOUT_SECONDS: "60"
       PIPER_PROVIDER_ID: piper_data
       PIPER_MODEL: /models/en_GB-alan-medium.onnx
       PIPER_VOICE_ID: en_GB-alan-medium
