@@ -20,9 +20,6 @@ on:
 
 permissions:
   contents: read
-  packages: write
-  id-token: write
-  attestations: write
 
 concurrency:
   group: publish-asterics-speech-${{ github.ref }}
@@ -68,6 +65,11 @@ jobs:
     name: Build, scan, and push
     needs: lint
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
