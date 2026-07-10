@@ -50,7 +50,7 @@ flowchart LR
 At build time, the image clones `Asterics-AAC-Helper` and copies its `speech/` module (Flask app, `speechManager`, caching utilities). This folder adds:
 
 | File | Role |
-|------|------|
+| ---- | ---- |
 | `VERSION` | Semantic version (single source of truth for releases) |
 | `version.py` | Reads `VERSION` at runtime |
 | `Dockerfile` | Image build: system deps, helper code, Piper model, Python packages |
@@ -65,7 +65,7 @@ At build time, the image clones `Asterics-AAC-Helper` and copies its `speech/` m
 Provided by Asterics AAC Helper (not defined in this folder):
 
 | Endpoint | Method | Description |
-|----------|--------|-------------|
+| -------- | ------ | ----------- |
 | `/version/` | GET | Service version from `VERSION` (JSON `{"version":"…"}`) |
 | `/voices/` | GET | List available voices (also used for health checks) |
 | `/speakdata/<text>/` | GET/POST | Return synthesized audio (`application/octet-stream`) |
@@ -80,7 +80,7 @@ Text in URLs is lowercased by the helper. With caching enabled, repeated phrases
 ### Runtime environment
 
 | Variable | Default (compose) | Description |
-|----------|-------------------|-------------|
+| -------- | ----------------- | ----------- |
 | `SPEECH_HOST` | `0.0.0.0` | Bind address |
 | `SPEECH_PORT` | `5555` | Listen port |
 | `SPEECH_LOG_LEVEL` | `INFO` | Log verbosity (`DEBUG`, `INFO`, `WARNING`, `ERROR`) |
@@ -96,7 +96,7 @@ Text in URLs is lowercased by the helper. With caching enabled, repeated phrases
 ### Build arguments (Dockerfile)
 
 | Argument | Description |
-|----------|-------------|
+| -------- | ----------- |
 | `AAC_HELPER_COMMIT` | Git commit of [Asterics-AAC-Helper](https://github.com/asterics/Asterics-AAC-Helper) to vendor into the image |
 | `VERSION` | Semantic version baked into OCI labels (defaults to `dev` for local builds; CI passes `VERSION` file) |
 | `PIPER_MODEL_BASENAME` | Filename stem for the downloaded model |
@@ -128,14 +128,14 @@ Functions are written in `snake_case` for lint compliance. CamelCase aliases (e.
 Structured logs go to stdout (view with `docker compose logs -f speech`).
 
 | Layer | What is logged |
-|-------|------------------|
+| ----- | -------------- |
 | HTTP requests | Method, path, endpoint, text hash/length (or full text at `DEBUG` / `SPEECH_LOG_TEXT=true`), provider/voice, status, `elapsed_ms` |
 | Cache | `cache=HIT` with `elapsed_ms`, or `cache=MISS` with `synth_ms` and `total_ms` |
 | Piper | Synthesis duration and output size per phrase |
 
 Example (default redaction at `INFO`):
 
-```
+```text
 request GET /speakdata/hello/ endpoint=speakdata text=hash=a665a4592042 len=5 ... elapsed_ms=820.1
 speak cache=MISS synthesis=OK text=hash=a665a4592042 len=5 ... synth_ms=815.2 total_ms=821.4
 piper synthesized text=hash=a665a4592042 len=5 bytes=12345 elapsed_ms=815.2
@@ -151,7 +151,7 @@ Set `SPEECH_LOG_LEVEL=DEBUG` or `SPEECH_LOG_TEXT=true` in `docker-compose.yml` t
 The canonical version lives in [`VERSION`](VERSION) (currently `0.1.0`). CI reads this file and tags images accordingly.
 
 | Image tag | When published |
-|-----------|----------------|
+| --------- | -------------- |
 | `latest` | Default branch (`main`/`master`) |
 | `0.1.0` | Every publish (from `VERSION`) |
 | `0.1`, `0` | Git tag push matching `v0.1.0` (semver) |
@@ -169,7 +169,7 @@ git tag "v${VERSION}"
 git push origin "v${VERSION}"
 ```
 
-4. CI publishes `ghcr.io/jubblin/asterics-speech:${VERSION}`, semver aliases, and `latest`.
+1. CI publishes `ghcr.io/jubblin/asterics-speech:${VERSION}`, semver aliases, and `latest`.
 
 Pin deployments in `docker-compose.yml`:
 
@@ -181,7 +181,14 @@ image: ghcr.io/jubblin/asterics-speech:0.1.0
 
 Workflow: [`.github/workflows/publish-asterics-speech.yml`](.github/workflows/publish-asterics-speech.yml)
 
-- **Trigger:** push to `master` or `main`, git tag `v*`, or manual **workflow_dispatch**; pull requests build only (no push)
+Pipeline order:
+
+1. **Super-Linter** — Python, Dockerfile (Hadolint + Checkov), YAML, Markdown, and GitHub Actions checks
+2. **Docker build** — image loaded locally (not pushed yet)
+3. **Trivy** — fails on unfixed `CRITICAL`/`HIGH` OS and library vulnerabilities
+4. **Push to GHCR** — only when lint, build, and scan pass (skipped on pull requests)
+
+- **Trigger:** push to `master` or `main`, git tag `v*`, or manual **workflow_dispatch**; pull requests lint, build, and scan only (no push)
 - **Registry:** [GitHub Container Registry](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry)
 - **Image:** `ghcr.io/jubblin/asterics-speech` with tags `latest`, `VERSION`, semver aliases (on `v*` tags), branch name, and commit SHA
 
@@ -221,7 +228,7 @@ checkov -f Dockerfile
 python3 -m py_compile *.py
 ```
 
-Known checkov finding: `CKV_DOCKER_3` (container runs as root). Acceptable for local/LAN use; add a non-root `USER` before production hardening.
+Known Checkov finding skipped in [`.github/linters/.checkov.yaml`](.github/linters/.checkov.yaml): `CKV_DOCKER_3` (container runs as root). Acceptable for local/LAN use; add a non-root `USER` before production hardening.
 
 Run `/health` (gstack) for a scored dashboard and trend tracking.
 

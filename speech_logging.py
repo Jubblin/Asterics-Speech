@@ -3,11 +3,12 @@ import re
 import time
 from urllib.parse import unquote
 
-import config  # type: ignore[import-not-found]
-import log_redaction
 import speechManager  # type: ignore[import-not-found]
 import util  # type: ignore[import-not-found]
 from flask import g, request
+
+import config  # type: ignore[import-not-found]
+import log_redaction
 
 logger = logging.getLogger("asterics.speech")
 

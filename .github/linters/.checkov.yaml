@@ -1,0 +1,4 @@
+# Checkov policy for Super-Linter (LINTER_RULES_PATH/.checkov.yaml)
+skip-check:
+  # Acceptable for local/LAN speech helper; add non-root USER before production hardening.
+  - CKV_DOCKER_3

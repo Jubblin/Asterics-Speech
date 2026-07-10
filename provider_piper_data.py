@@ -4,8 +4,9 @@ import subprocess
 import time
 
 import constants  # type: ignore[import-not-found]
-import log_redaction
 import util  # type: ignore[import-not-found]
+
+import log_redaction
 
 logger = logging.getLogger("asterics.speech.piper")
 
@@ -50,6 +51,7 @@ def get_speak_data(text, _voice_id=None):
             input=text,
             text=True,
             capture_output=True,
+            check=False,
             timeout=_synth_timeout_s,
         )
     except subprocess.TimeoutExpired:
