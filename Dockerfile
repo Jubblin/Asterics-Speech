@@ -1,4 +1,4 @@
-FROM python:3.12-bookworm
+FROM python:3.12-slim-bookworm
 
 ARG AAC_HELPER_COMMIT=8b04af51bd0d0b99895327000122062e3b9c0276
 ARG VERSION=dev
@@ -11,6 +11,7 @@ LABEL org.opencontainers.image.title="Asterics Speech" \
     org.opencontainers.image.version="${VERSION}"
 
 RUN apt-get update \
+    && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends \
         espeak-ng=1.51* \
         git=1:2.39* \
